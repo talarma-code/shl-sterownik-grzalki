@@ -1,23 +1,21 @@
 #include "EspNowTransport.h"
+#include "../MatterLikeProtocol/MatterLikePacket.h"
+#include <cstring>
 #include <WiFi.h>
 
-void (*EspNowTransport::userCallback)(const MatterLikePacket &, const uint8_t *) = nullptr;
+EspNowTransport::PacketCallback EspNowTransport::userCallback = nullptr;
+void* EspNowTransport::userContext = nullptr;
+static uint8_t MAX_ESP_NOW_FRAME = 250;
 
 bool EspNowTransport::begin() {
-     WiFi.mode(WIFI_STA);; // musimy być w trybie Wi-Fi STA
+    WiFi.mode(WIFI_STA); // must be in STA for ESP-NOW
 
     if (esp_now_init() != ESP_OK) {
         Serial.println("ESP-NOW init failed");
         return false;
     }
 
-    // Rejestrujemy nowy typ callbacku
-    esp_err_t res = esp_now_register_recv_cb(onDataRecv);
-    if (res != ESP_OK) {
-        Serial.println("ESP-NOW register recv callback failed");
-        return false;
-    }
-
+    esp_now_register_recv_cb(onDataRecv);
     esp_now_register_send_cb(onDataSent);
 
     Serial.println("ESP-NOW initialized successfully");
@@ -25,42 +23,38 @@ bool EspNowTransport::begin() {
 }
 
 bool EspNowTransport::send(const uint8_t *peerMac, const MatterLikePacket &packet) {
-    esp_err_t result = esp_now_send(peerMac, reinterpret_cast<const uint8_t *>(&packet), sizeof(packet));
+
+    if (sizeof(MatterLikePacket) > MAX_ESP_NOW_FRAME) { // ESP-NOW max payload ~250B
+        Serial.println("Packet too large for ESP-NOW!");
+        return false;
+    }
+
+    uint8_t buffer[sizeof(MatterLikePacket)];
+    memcpy(buffer, &packet, sizeof(MatterLikePacket));
+   
+    esp_err_t result = esp_now_send(peerMac, buffer, sizeof(MatterLikePacket));
     return (result == ESP_OK);
 }
 
-void EspNowTransport::sendAck(const uint8_t *peerMac, const MatterLikePacket &receivedPacket) {
-    MatterLikePacket ack = receivedPacket;
-    ack.payload.commandId = 0xFF; // custom ACK command
-    ack.payload.value = 1;
-    send(peerMac, ack);
+
+void EspNowTransport::onPacketReceived(PacketCallback callback, void *context) {
+    userCallback  = callback;
+    userContext   = context;
 }
 
-void EspNowTransport::onPacketReceived(void (*callback)(const MatterLikePacket &, const uint8_t *senderMac)) {
-    userCallback = callback;
-}
+void EspNowTransport::onDataRecv(const esp_now_recv_info_t *info, const uint8_t *data, int len) {
+    if (!userCallback) return;
 
-// ----------------------- private callbacks -----------------------
-
-void EspNowTransport::onDataRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int len) {
-    if (len == sizeof(MatterLikePacket)) {
-        MatterLikePacket packet;
-        memcpy(&packet, data, sizeof(MatterLikePacket));
-
-        if (userCallback) {
-            userCallback(packet, esp_now_info->src_addr);
-        }
-    } else {
-        Serial.printf("Invalid ESP-NOW packet length: %d bytes\n", len);
+    MatterLikePacket pkt;
+    if (len > sizeof(MatterLikePacket)) {
+        Serial.printf("Invalid ESP-NOW packet received (%d bytes)\n", len);
+        return;
     }
+
+    userCallback(userContext, pkt, info->src_addr);
 }
 
 void EspNowTransport::onDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
-    Serial.print("ESP-NOW send status to ");
-    for (int i = 0; i < 6; i++) {
-        Serial.printf("%02X", mac_addr[i]);
-        if (i < 5) Serial.print(":");
-    }
-    Serial.print(" -> ");
-    Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Success" : "Fail");
+    Serial.printf("ESP-NOW send status: %s\n",
+                  status == ESP_NOW_SEND_SUCCESS ? "Success" : "Fail");
 }

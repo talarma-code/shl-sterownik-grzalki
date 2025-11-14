@@ -1,5 +1,7 @@
 #pragma once
 #include "Heater/HeaterDirect.h"
+#include "NetworkTransport/EspNowTransport.h"
+#include "MessageDispatcher.h"
 
 class Application {
 public:
@@ -9,4 +11,8 @@ public:
 
 private:
     HeaterDirect heater;
+    MessageDispatcher messageDispatcher;
+    EspNowTransport transport;
+
+    void onPacket(const MatterLikePacket &pkt, const uint8_t *mac);
 };
