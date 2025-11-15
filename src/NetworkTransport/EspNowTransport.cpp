@@ -17,6 +17,18 @@ bool EspNowTransport::begin() {
         return false;
     }
 
+    const uint8_t MAC_SHL_CENTRALLA[] = { 0x40, 0x91, 0x51, 0x20, 0xC1, 0x98 };
+
+    if (!esp_now_is_peer_exist(MAC_SHL_CENTRALLA)) {
+        esp_now_peer_info_t peerInfo = {};
+        memcpy(peerInfo.peer_addr, MAC_SHL_CENTRALLA, 6);
+        peerInfo.channel = 0;
+        peerInfo.encrypt = false;
+        esp_now_add_peer(&peerInfo);
+
+        Serial.println("Peer auto-added!");
+    }
+
     esp_now_register_recv_cb(onDataRecv);
     esp_now_register_send_cb(onDataSent);
 
@@ -44,6 +56,8 @@ void EspNowTransport::onPacketReceived(IMatterReceiver *receiver) {
 }
 
 void EspNowTransport::onDataRecv(const esp_now_recv_info_t *info, const uint8_t *data, int len) {
+
+    Serial.println("EspNowTransport::onDataRecv");
     if (!userReceiver) {
         Serial.printf("EspNowTransport - userReceiver NOT REGISTERED!!!\n");
         return;

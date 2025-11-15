@@ -4,8 +4,8 @@
 #include "../MatterLikeProtocol/MatterLikePacket.h"
 
 
-#define MAC_SHL_CENTRALLA "40:91:51:20:C1:98"
-#define MAC_SHL_STEROWNIK_GRZALKI "88:57:21:C0:8F:28"
+// #define MAC_SHL_CENTRALLA "40:91:51:20:C1:98"
+// #define MAC_SHL_STEROWNIK_GRZALKI "88:57:21:C0:8F:28"
 
 class IMatterLikeTransport {
 public:

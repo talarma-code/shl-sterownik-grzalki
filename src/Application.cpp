@@ -1,5 +1,6 @@
 #include "Application.h"
 #include <Arduino.h>
+#include <WiFi.h>
 
 #define LED_PIN 2  // connected relay 
 
@@ -8,7 +9,9 @@ Application::Application()
 {}
 
 void Application::setup() {
+
     Serial.begin(115200);
+    delay(500);
     heater.turnOff();
     transport.begin();
     transport.onPacketReceived(this);
@@ -17,6 +20,7 @@ void Application::setup() {
 
 void Application::loop() {
     Serial.println("czekam na dane...");
+     Serial.println(WiFi.macAddress());
     delay(3000);
 }
 
