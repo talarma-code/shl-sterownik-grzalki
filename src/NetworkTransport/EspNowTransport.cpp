@@ -3,9 +3,11 @@
 #include <cstring>
 #include <WiFi.h>
 
-EspNowTransport::PacketCallback EspNowTransport::userCallback = nullptr;
-void* EspNowTransport::userContext = nullptr;
+
 static uint8_t MAX_ESP_NOW_FRAME = 250;
+
+IMatterReceiver* EspNowTransport::userReceiver = nullptr;
+
 
 bool EspNowTransport::begin() {
     WiFi.mode(WIFI_STA); // must be in STA for ESP-NOW
@@ -37,22 +39,28 @@ bool EspNowTransport::send(const uint8_t *peerMac, const MatterLikePacket &packe
 }
 
 
-void EspNowTransport::onPacketReceived(PacketCallback callback, void *context) {
-    userCallback  = callback;
-    userContext   = context;
+void EspNowTransport::onPacketReceived(IMatterReceiver *receiver) {
+    userReceiver = receiver;
 }
 
 void EspNowTransport::onDataRecv(const esp_now_recv_info_t *info, const uint8_t *data, int len) {
-    if (!userCallback) return;
-
-    MatterLikePacket pkt;
-    if (len > sizeof(MatterLikePacket)) {
-        Serial.printf("Invalid ESP-NOW packet received (%d bytes)\n", len);
+    if (!userReceiver) {
+        Serial.printf("EspNowTransport - userReceiver NOT REGISTERED!!!\n");
         return;
     }
 
-    userCallback(userContext, pkt, info->src_addr);
+    if (len != sizeof(MatterLikePacket)) {
+        Serial.printf("Invalid ESP-NOW packet size: %d bytes (expected %u)\n",
+                      len, sizeof(MatterLikePacket));
+        return;
+    }
+
+    MatterLikePacket pkt;
+    memcpy(&pkt, data, sizeof(MatterLikePacket));
+
+    userReceiver->handlePacket(pkt, info->src_addr);
 }
+
 
 void EspNowTransport::onDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
     Serial.printf("ESP-NOW send status: %s\n",

@@ -7,15 +7,14 @@
 class EspNowTransport : public IMatterLikeTransport {
 public:
 
-
     bool begin() override;
     bool send(const uint8_t *peerMac, const MatterLikePacket &packet) override;
-    void onPacketReceived(PacketCallback callback, void *context);
+    void onPacketReceived(IMatterReceiver *receiver) override;
 
 private:
     static void onDataRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int len);
     static void onDataSent(const uint8_t *mac_addr, esp_now_send_status_t status);
 
-    static PacketCallback userCallback;
-    static void *userContext;
+    static IMatterReceiver *userReceiver;
+
 };

@@ -1,6 +1,6 @@
 #include "MessageDispatcher.h"
 
-MessageDispatcher::MessageDispatcher() : heater1(LED_PIN), heater2(RELAY_PIN) {}
+MessageDispatcher::MessageDispatcher() : heater1(RELAY_PIN), heater2(LED_PIN) {}
 
 void MessageDispatcher::handlePacket(const MatterLikePacket &pkt)
 {

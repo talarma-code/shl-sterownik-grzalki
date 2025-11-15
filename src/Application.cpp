@@ -11,23 +11,16 @@ void Application::setup() {
     Serial.begin(115200);
     heater.turnOff();
     transport.begin();
-    transport.onPacketReceived([](void *ctx, const MatterLikePacket &pkt, const uint8_t *mac) {
-        static_cast<Application*>(ctx)->onPacket(pkt, mac);
-    },
-    this
-);
+    transport.onPacketReceived(this);
+
 }
 
 void Application::loop() {
-    Serial.println("szybko mrugacz");
-    heater.turnOn();
-    delay(3000);
-    heater.turnOff();
+    Serial.println("czekam na dane...");
     delay(3000);
 }
 
-
-void Application::onPacket(const MatterLikePacket &pkt, const uint8_t *mac) {
+void Application::handlePacket(const MatterLikePacket &pkt, const uint8_t *srcMac) {
   Serial.println("Received MatterLike packet!");
   messageDispatcher.handlePacket(pkt);
 }
