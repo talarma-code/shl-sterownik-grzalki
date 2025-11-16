@@ -19,9 +19,9 @@ void Application::setup() {
 }
 
 void Application::loop() {
-    Serial.println("czekam na dane...");
-     Serial.println(WiFi.macAddress());
-    delay(3000);
+    // Serial.println("czekam na dane...");
+    //  Serial.println(WiFi.macAddress());
+    // delay(3000);
 }
 
 void Application::handlePacket(const MatterLikePacket &pkt, const uint8_t *srcMac) {

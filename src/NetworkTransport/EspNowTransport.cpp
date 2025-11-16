@@ -2,32 +2,58 @@
 #include "../MatterLikeProtocol/MatterLikePacket.h"
 #include <cstring>
 #include <WiFi.h>
+#include <esp_wifi.h>
 
 
 static uint8_t MAX_ESP_NOW_FRAME = 250;
 
 IMatterReceiver* EspNowTransport::userReceiver = nullptr;
+static const uint8_t MAC_LOCAL_HEATER[]  = {0x74, 0x61, 0x6C, 0x61, 0x72, 0x31}; // talar1 - heater
 
 
 bool EspNowTransport::begin() {
-    WiFi.mode(WIFI_STA); // must be in STA for ESP-NOW
+    delay(300);
 
+    Serial.println("\n=== SHL Heater Controller Start ===");
+
+    WiFi.mode(WIFI_STA);
+
+    // Ustaw własny MAC (NOWOŚĆ: esp_wifi_set_mac wymaga specjalnego include!)
+    if (esp_wifi_set_mac(WIFI_IF_STA, (uint8_t*)MAC_LOCAL_HEATER) != ESP_OK) {
+        Serial.println("⚠ Could not set custom MAC!");
+    }
+
+    Serial.print("Local MAC set to: ");
+    Serial.printf("%02X:%02X:%02X:%02X:%02X:%02X\n",
+                   MAC_LOCAL_HEATER[0], MAC_LOCAL_HEATER[1], MAC_LOCAL_HEATER[2],
+                   MAC_LOCAL_HEATER[3], MAC_LOCAL_HEATER[4], MAC_LOCAL_HEATER[5]);
+
+    // Start ESP-NOW
     if (esp_now_init() != ESP_OK) {
-        Serial.println("ESP-NOW init failed");
+        Serial.println("❌ ESP-NOW init failed!");
         return false;
     }
 
-    const uint8_t MAC_SHL_CENTRALLA[] = { 0x40, 0x91, 0x51, 0x20, 0xC1, 0x98 };
 
-    if (!esp_now_is_peer_exist(MAC_SHL_CENTRALLA)) {
-        esp_now_peer_info_t peerInfo = {};
-        memcpy(peerInfo.peer_addr, MAC_SHL_CENTRALLA, 6);
-        peerInfo.channel = 0;
-        peerInfo.encrypt = false;
-        esp_now_add_peer(&peerInfo);
 
-        Serial.println("Peer auto-added!");
-    }
+    // WiFi.mode(WIFI_STA); // must be in STA for ESP-NOW
+
+    // if (esp_now_init() != ESP_OK) {
+    //     Serial.println("ESP-NOW init failed");
+    //     return false;
+    // }
+
+    // const uint8_t MAC_SHL_CENTRALLA[] = { 0x40, 0x91, 0x51, 0x20, 0xC1, 0x98 };
+
+    // if (!esp_now_is_peer_exist(MAC_SHL_CENTRALLA)) {
+    //     esp_now_peer_info_t peerInfo = {};
+    //     memcpy(peerInfo.peer_addr, MAC_SHL_CENTRALLA, 6);
+    //     peerInfo.channel = 0;
+    //     peerInfo.encrypt = false;
+    //     esp_now_add_peer(&peerInfo);
+
+    //     Serial.println("Peer auto-added!");
+    // }
 
     esp_now_register_recv_cb(onDataRecv);
     esp_now_register_send_cb(onDataSent);
