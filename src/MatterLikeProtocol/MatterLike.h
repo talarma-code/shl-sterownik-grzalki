@@ -2,7 +2,7 @@
 
 #include <Arduino.h>
 #include <esp_now.h>
-#include "MatterLikePacket.h" // Your header with structures
+#include "MatterLikePacket.h" 
 
 class MatterLike {
 public:
