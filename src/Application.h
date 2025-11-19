@@ -3,6 +3,7 @@
 #include "NetworkTransport/EspNowTransport.h"
 #include "NetworkTransport/IMatterReceiver.h"
 #include "MessageDispatcher.h"
+#include "PowerMeter/PulsePowerMeter.h"
 
 
 class Application : public IMatterReceiver {
@@ -16,6 +17,7 @@ private:
     HeaterDirect heater;
     MessageDispatcher messageDispatcher;
     EspNowTransport transport;
+    PulsePowerMeter pulsePowerMeter;
 
 
 };

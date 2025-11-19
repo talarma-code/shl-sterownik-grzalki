@@ -5,7 +5,8 @@
 #define LED_PIN 2  // connected relay 
 
 Application::Application()
-    : heater(LED_PIN)       // przypisanie pinu grzałki
+    : heater(LED_PIN),       // przypisanie pinu grzałki
+    pulsePowerMeter(4)      //GPIO 4 as pulse inpute
 {}
 
 void Application::setup() {
@@ -15,13 +16,13 @@ void Application::setup() {
     heater.turnOff();
     transport.begin();
     transport.onPacketReceived(this);
+    //pulsePowerMeter.setup();              //uncomment to configure pulse counter for power meter           
 
 }
 
 void Application::loop() {
-    // Serial.println("czekam na dane...");
-    //  Serial.println(WiFi.macAddress());
-    // delay(3000);
+    delay(2000);
+    //uint32_t count = pulsePowerMeter.count();
 }
 
 void Application::handlePacket(const MatterLikePacket &pkt, const uint8_t *srcMac) {
