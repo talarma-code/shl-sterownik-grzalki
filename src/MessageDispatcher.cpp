@@ -5,7 +5,13 @@
 
 MessageDispatcher::MessageDispatcher() : heater1(RELAY_PIN), heater2(LED_PIN)
 {
+
+}
+
+void MessageDispatcher::setup() {
+    Serial.println("MessageDispatcher::setup");
     dds661PowerMeter.setup();
+    delay(20);
     transport.onPacketReceived(this);
     transport.begin();
 }

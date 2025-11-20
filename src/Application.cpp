@@ -14,12 +14,14 @@ void Application::setup() {
     Serial.begin(115200);
     delay(500);
     heater.turnOff();
+    messageDispatcher.setup();
     // transport.begin();
     // transport.onPacketReceived(this);
 }
 
 void Application::loop() {
-    // delay(1000);
+     delay(1000);
+
     // Serial.print("Voltage: ");
     // Serial.printf("%.1f", dds661PowerMeter.voltage(DSS661_SLAVE_ADDRESS));
     // Serial.println("");

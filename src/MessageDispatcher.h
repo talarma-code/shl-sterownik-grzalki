@@ -14,6 +14,7 @@ class MessageDispatcher : public IMatterReceiver {
 public:
     MessageDispatcher();
     void handlePacket(const MatterLikePacket &pkt, const uint8_t *srcMac) override;
+    void setup();
 
 
 private:
