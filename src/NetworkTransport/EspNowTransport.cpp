@@ -9,6 +9,7 @@ static uint8_t MAX_ESP_NOW_FRAME = 250;
 
 IMatterReceiver* EspNowTransport::userReceiver = nullptr;
 static const uint8_t MAC_LOCAL_HEATER[]  = {0x74, 0x61, 0x6C, 0x61, 0x72, 0x31}; // talar1 - heater
+static const uint8_t MAC_CENTRALKA[]   = {0x74, 0x61, 0x6C, 0x61, 0x72, 0x30}; // talar0 - centrala
 
 
 bool EspNowTransport::begin() {
@@ -34,26 +35,17 @@ bool EspNowTransport::begin() {
         return false;
     }
 
+    // Dodaj odbiornik (heater) jako PEER
+    esp_now_peer_info_t peerInfo = {};
+    memcpy(peerInfo.peer_addr, MAC_CENTRALKA, 6);
+    peerInfo.channel = 0;  // ten sam co WiFi
+    peerInfo.encrypt = false;
 
-
-    // WiFi.mode(WIFI_STA); // must be in STA for ESP-NOW
-
-    // if (esp_now_init() != ESP_OK) {
-    //     Serial.println("ESP-NOW init failed");
-    //     return false;
-    // }
-
-    // const uint8_t MAC_SHL_CENTRALLA[] = { 0x40, 0x91, 0x51, 0x20, 0xC1, 0x98 };
-
-    // if (!esp_now_is_peer_exist(MAC_SHL_CENTRALLA)) {
-    //     esp_now_peer_info_t peerInfo = {};
-    //     memcpy(peerInfo.peer_addr, MAC_SHL_CENTRALLA, 6);
-    //     peerInfo.channel = 0;
-    //     peerInfo.encrypt = false;
-    //     esp_now_add_peer(&peerInfo);
-
-    //     Serial.println("Peer auto-added!");
-    // }
+    if (esp_now_add_peer(&peerInfo) == ESP_OK) {
+        Serial.println("Peer added OK");
+    } else {
+        Serial.println("❌ Peer add FAILED!");
+    }
 
     esp_now_register_recv_cb(onDataRecv);
     esp_now_register_send_cb(onDataSent);

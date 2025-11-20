@@ -6,18 +6,21 @@
 MessageDispatcher::MessageDispatcher() : heater1(RELAY_PIN), heater2(LED_PIN)
 {
     dds661PowerMeter.setup();
+    transport.onPacketReceived(this);
+    transport.begin();
 }
 
-void MessageDispatcher::handlePacket(const MatterLikePacket &pkt)
+void MessageDispatcher::handlePacket(const MatterLikePacket &pkt, const uint8_t *srcMac)
 {
+    Serial.println("Received MatterLike packet!");
     switch (pkt.payload.clusterId)
     {
     case CLUSTER_ONOFF:
-        handleOnOff(pkt);
+        handleOnOff(pkt, srcMac);
         break;
 
     case CLUSTER_ELECTRICAL_MEAS:
-        handleElectricalMeasurement(pkt);
+        handleElectricalMeasurement(pkt, srcMac);
         break;
 
     default:
@@ -28,7 +31,7 @@ void MessageDispatcher::handlePacket(const MatterLikePacket &pkt)
 
 // ---------------- OnOff Handling ----------------
 
-void MessageDispatcher::handleOnOff(const MatterLikePacket &pkt)
+void MessageDispatcher::handleOnOff(const MatterLikePacket &pkt, const uint8_t *srcMac)
 {
     bool newState = false;
 
@@ -51,6 +54,17 @@ void MessageDispatcher::handleOnOff(const MatterLikePacket &pkt)
         toggleRelay(pkt.payload.endpointId);
         break;
 
+    case CMD_READ_ATTRIBUTE:
+    {
+        Serial.println("CMD_READ_ATTRIBUTE received");
+        bool currentState = getRelayStateForEndpoint(pkt.payload.endpointId);
+        Serial.printf("currentState: %d W\n", currentState); 
+        MatterLikePacket rs = MatterLike::createReportAttributePacket(pkt, currentState);
+        transport.send(srcMac, rs);
+        break;
+        break;
+    }
+
     default:
         Serial.printf("Unknown OnOff Command: 0x%02X\n", pkt.payload.commandId);
         return;
@@ -66,14 +80,14 @@ bool MessageDispatcher::getRelayStateForEndpoint(uint8_t ep)
     switch (ep)
     {
     case 1:
-        return true; // add implementation
+        return heater1.isOn();
     case 2:
-        return true; // add implementation
+        return heater2.isOn();
     }
     return false;
 }
 
-void MessageDispatcher::setRelayStateForEndpoint(uint8_t ep, bool state)
+void MessageDispatcher::setRelayStateForEndpoint (uint8_t ep, bool state)
 {
     switch (ep)
     {
@@ -97,9 +111,9 @@ void MessageDispatcher::toggleRelay(uint8_t ep)
 
 // ---------------- Electrical Measurement Handling ----------------
 
-void MessageDispatcher::handleElectricalMeasurement(const MatterLikePacket &pkt)
+void MessageDispatcher::handleElectricalMeasurement(const MatterLikePacket &pkt, const uint8_t *srcMac)
 {
-    float val = (float)pkt.payload.value;
+    // float val = (float)pkt.payload.value;
 
     switch (pkt.payload.attributeId)
     {
@@ -107,27 +121,46 @@ void MessageDispatcher::handleElectricalMeasurement(const MatterLikePacket &pkt)
     {
         uint32_t power = dds661PowerMeter.activePower(DSS661_SLAVE_ADDRESS);
         Serial.printf("Active Power: %.2f W\n", power);
-        MatterLikePacket rs = MatterLike::createReportAttributePacket(pkt.payload.nodeId,
-                                                                      pkt.payload.endpointId,
-                                                                      pkt.payload.clusterId,
-                                                                      pkt.payload.attributeId,
-                                                                      power);
-
+        MatterLikePacket rs = MatterLike::createReportAttributePacket(pkt, power);
+        transport.send(srcMac, rs);
         break;
     }
 
     case ATTR_EM_RMS_VOLTAGE:
-        Serial.printf("Voltage: %.2f V\n", val);
+    {
+        uint32_t voltage = dds661PowerMeter.voltage(DSS661_SLAVE_ADDRESS);
+        Serial.printf("Voltage: %.2f V\n", voltage);
+        MatterLikePacket rs = MatterLike::createReportAttributePacket(pkt, voltage);
+        transport.send(srcMac, rs);
         break;
+    }
     case ATTR_EM_RMS_CURRENT:
-        Serial.printf("Current: %.2f A\n", val);
+    {
+        uint32_t current = dds661PowerMeter.electricCurrent(DSS661_SLAVE_ADDRESS);
+        Serial.printf("Current: %.2f A\n", current);
+        MatterLikePacket rs = MatterLike::createReportAttributePacket(pkt, current);
+        transport.send(srcMac, rs);
         break;
-    case ATTR_EM_POWER_FACTOR:
-        Serial.printf("Power Factor: %.2f\n", val);
+    }
+    case ATTR_EM_ENERGY:
+    {
+        u32_t energy = dds661PowerMeter.totalActivePower(DSS661_SLAVE_ADDRESS);
+        Serial.printf("Total active power/energy: %.2f\n", energy);
+        MatterLikePacket rs = MatterLike::createReportAttributePacket(pkt, energy);
+        transport.send(srcMac, rs);
         break;
+    }
+    case ATTR_EM_RMS_FREQUENCY:
+    {
+        u32_t frequency = dds661PowerMeter.frequency(DSS661_SLAVE_ADDRESS);
+        Serial.printf("Frequency: %.2f\n", frequency);
+        MatterLikePacket rs = MatterLike::createReportAttributePacket(pkt, frequency);
+        transport.send(srcMac, rs);
+        break;
+    }
     default:
-        Serial.printf("Unknown EM attribute: 0x%04X value=%f\n",
-                      pkt.payload.attributeId, val);
+        Serial.printf("Unknown EM attribute: 0x%04X",
+                      pkt.payload.attributeId);
         break;
     }
 }

@@ -14,9 +14,8 @@ void Application::setup() {
     Serial.begin(115200);
     delay(500);
     heater.turnOff();
-    transport.begin();
-    transport.onPacketReceived(this);
-    // dds661PowerMeter.setup();
+    // transport.begin();
+    // transport.onPacketReceived(this);
 }
 
 void Application::loop() {
@@ -46,7 +45,7 @@ void Application::loop() {
     // Serial.println("");
 }
 
-void Application::handlePacket(const MatterLikePacket &pkt, const uint8_t *srcMac) {
-  Serial.println("Received MatterLike packet!");
-  messageDispatcher.handlePacket(pkt);
-}
+// void Application::handlePacket(const MatterLikePacket &pkt, const uint8_t *srcMac) {
+//   Serial.println("Received MatterLike packet!");
+//   messageDispatcher.handlePacket(pkt);
+// }
