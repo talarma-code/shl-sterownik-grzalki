@@ -4,6 +4,7 @@
 #include "NetworkTransport/IMatterReceiver.h"
 #include "MessageDispatcher.h"
 #include "PowerMeter/PulsePowerMeter.h"
+#include "PowerMeter/DDS661PowerMeter.h"
 
 
 class Application : public IMatterReceiver {
@@ -17,7 +18,5 @@ private:
     HeaterDirect heater;
     MessageDispatcher messageDispatcher;
     EspNowTransport transport;
-    PulsePowerMeter pulsePowerMeter;
-
-
+    DDS661PowerMeter dds661PowerMeter;
 };

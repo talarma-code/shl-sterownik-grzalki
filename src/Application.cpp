@@ -3,10 +3,10 @@
 #include <WiFi.h>
 
 #define LED_PIN 2  // connected relay 
+#define DSS661_SLAVE_ADDRESS 1
 
 Application::Application()
-    : heater(LED_PIN),       // przypisanie pinu grzałki
-    pulsePowerMeter(4)      //GPIO 4 as pulse inpute
+    : heater(LED_PIN)       // przypisanie pinu grzałki
 {}
 
 void Application::setup() {
@@ -16,13 +16,36 @@ void Application::setup() {
     heater.turnOff();
     transport.begin();
     transport.onPacketReceived(this);
-    //pulsePowerMeter.setup();              //uncomment to configure pulse counter for power meter           
-
+    dds661PowerMeter.setup();
 }
 
 void Application::loop() {
-    delay(2000);
-    //uint32_t count = pulsePowerMeter.count();
+    delay(1000);
+    Serial.print("Voltage: ");
+    Serial.printf("%.1f", dds661PowerMeter.voltage(DSS661_SLAVE_ADDRESS));
+    Serial.println("");
+
+    delay(1000);
+    Serial.print("activePower: ");
+    Serial.printf("%.1f", dds661PowerMeter.activePower(DSS661_SLAVE_ADDRESS));
+    Serial.println("");
+
+    delay(1000);
+    Serial.print("electricCurrent: ");
+    Serial.printf("%.1f", dds661PowerMeter.electricCurrent(DSS661_SLAVE_ADDRESS));
+    Serial.println("");
+
+    delay(1000);
+    Serial.print("frequency: ");
+    Serial.printf("%.1f", dds661PowerMeter.frequency(DSS661_SLAVE_ADDRESS));
+    Serial.println("");
+
+    delay(1000);
+    Serial.print("totalActivePower: ");
+    Serial.printf("%.1f", dds661PowerMeter.totalActivePower(DSS661_SLAVE_ADDRESS));
+    Serial.println("");
+
+    
 }
 
 void Application::handlePacket(const MatterLikePacket &pkt, const uint8_t *srcMac) {
