@@ -1,5 +1,5 @@
 #pragma once
-#include "../MatterLikeProtocol/MatterLikePacket.h"
+#include "MatterLikePacket.h"
 
 class IMatterReceiver {
 public:

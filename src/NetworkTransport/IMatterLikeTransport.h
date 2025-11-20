@@ -1,7 +1,7 @@
 #pragma once
 #include <Arduino.h>
 #include "IMatterReceiver.h"
-#include "../MatterLikeProtocol/MatterLikePacket.h"
+#include "MatterLikePacket.h"
 
 
 // #define MAC_SHL_CENTRALLA "40:91:51:20:C1:98"

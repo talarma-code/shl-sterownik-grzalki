@@ -2,7 +2,7 @@
 #include <Arduino.h>
 #include <esp_now.h>
 #include "IMatterLikeTransport.h"
-#include "../MatterLikeProtocol/MatterLikePacket.h"
+#include "MatterLikePacket.h"
 
 class EspNowTransport : public IMatterLikeTransport {
 public:

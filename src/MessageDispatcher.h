@@ -1,25 +1,8 @@
 #pragma once
 #include <Arduino.h>
-#include "MatterLikeProtocol/MatterLikePacket.h"
-#include "Heater/HeaterDirect.h"
-
-// // Cluster IDs
-// #define CLUSTER_ONOFF                  0x0006
-// #define CLUSTER_ELECTRICAL_MEAS        0x0B04
-
-// // OnOff Commands
-// #define CMD_OFF                        0x00
-// #define CMD_ON                         0x01
-// #define CMD_TOGGLE                     0x02
-
-// // OnOff Attributes (reported state read-back)
-// #define ATTR_ONOFF_STATE               0x0000
-
-// // Electrical Measurement Attributes
-// #define ATTR_EM_ACTIVE_POWER           0x0505
-// #define ATTR_EM_RMS_VOLTAGE            0x0508
-// #define ATTR_EM_RMS_CURRENT            0x050B
-// #define ATTR_EM_POWER_FACTOR           0x050D
+#include "MatterLikePacket.h"
+#include "HeaterDirect.h"
+#include "DDS661PowerMeter.h"
 
 // Output pins 
 #define LED_PIN 2 
@@ -33,6 +16,7 @@ public:
 private:
     HeaterDirect heater1;
     HeaterDirect heater2;
+    DDS661PowerMeter dds661PowerMeter;
 
     void handleOnOff(const MatterLikePacket &pkt);
     void handleElectricalMeasurement(const MatterLikePacket &pkt);

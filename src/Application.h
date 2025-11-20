@@ -1,10 +1,10 @@
 #pragma once
 #include "Heater/HeaterDirect.h"
-#include "NetworkTransport/EspNowTransport.h"
-#include "NetworkTransport/IMatterReceiver.h"
+#include "EspNowTransport.h"
+#include "IMatterReceiver.h"
 #include "MessageDispatcher.h"
-#include "PowerMeter/PulsePowerMeter.h"
-#include "PowerMeter/DDS661PowerMeter.h"
+#include "PulsePowerMeter.h"
+
 
 
 class Application : public IMatterReceiver {
@@ -18,5 +18,4 @@ private:
     HeaterDirect heater;
     MessageDispatcher messageDispatcher;
     EspNowTransport transport;
-    DDS661PowerMeter dds661PowerMeter;
 };

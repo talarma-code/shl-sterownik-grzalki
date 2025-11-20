@@ -1,5 +1,5 @@
 #include "EspNowTransport.h"
-#include "../MatterLikeProtocol/MatterLikePacket.h"
+#include "MatterLikePacket.h"
 #include <cstring>
 #include <WiFi.h>
 #include <esp_wifi.h>

@@ -1,5 +1,6 @@
 #include "DDS661PowerMeter.h"
 
+
 #define MODBUS_ESP32_MASTER_ID 1
 
 #define DDS661_VOLTAGE 0x0000
@@ -14,6 +15,10 @@ void DDS661PowerMeter::setup() {
     //for hardware configuration: connect Tx from ESP32 board to TX on Rs485 converter board, the same for TX
     Serial2.begin(9600, SERIAL_8E1, 17, 16); // RX2 = 17(GPIO17), TX2 = 16(GPIO16)
 
+}
+
+void DDS661PowerMeter::registerSender(IMatterLikeTransport* sender) {
+  _sender = sender;
 }
 
 
