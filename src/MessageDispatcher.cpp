@@ -19,6 +19,13 @@ void MessageDispatcher::setup() {
 void MessageDispatcher::handlePacket(const MatterLikePacket &pkt, const uint8_t *srcMac)
 {
     Serial.println("Received MatterLike packet!");
+
+    if (MatterLike::isAckPacket(pkt)) {
+        Serial.println("Sending MatterLike ACK packet!");
+        MatterLikePacket ackPacket = MatterLike::createAckPacket(pkt);
+        transport.send(srcMac, ackPacket);
+    }
+
     switch (pkt.payload.clusterId)
     {
     case CLUSTER_ONOFF:
@@ -39,20 +46,16 @@ void MessageDispatcher::handlePacket(const MatterLikePacket &pkt, const uint8_t 
 
 void MessageDispatcher::handleOnOff(const MatterLikePacket &pkt, const uint8_t *srcMac)
 {
-    bool newState = false;
-
     switch (pkt.payload.commandId)
     {
     case CMD_ON:
-        newState = true;
         Serial.println("CMD_ON received");
-        setRelayStateForEndpoint(pkt.payload.endpointId, newState);
+        setRelayStateForEndpoint(pkt.payload.endpointId, true);
         break;
 
     case CMD_OFF:
-        newState = false;
         Serial.println("CMD_OFF received");
-        setRelayStateForEndpoint(pkt.payload.endpointId, newState);
+        setRelayStateForEndpoint(pkt.payload.endpointId, false);
         break;
 
     case CMD_TOGGLE:
@@ -68,7 +71,6 @@ void MessageDispatcher::handleOnOff(const MatterLikePacket &pkt, const uint8_t *
         MatterLikePacket rs = MatterLike::createReportAttributePacket(pkt, currentState);
         transport.send(srcMac, rs);
         break;
-        break;
     }
 
     default:
@@ -80,7 +82,6 @@ void MessageDispatcher::handleOnOff(const MatterLikePacket &pkt, const uint8_t *
 }
 
 // Relay helpers:
-
 bool MessageDispatcher::getRelayStateForEndpoint(uint8_t ep)
 {
     switch (ep)
@@ -119,14 +120,12 @@ void MessageDispatcher::toggleRelay(uint8_t ep)
 
 void MessageDispatcher::handleElectricalMeasurement(const MatterLikePacket &pkt, const uint8_t *srcMac)
 {
-    // float val = (float)pkt.payload.value;
-
     switch (pkt.payload.attributeId)
     {
     case ATTR_EM_ACTIVE_POWER:
     {
         uint32_t power = dds661PowerMeter.activePower(DSS661_SLAVE_ADDRESS);
-        Serial.printf("Active Power: %.2f W\n", power);
+        Serial.printf("Active Power: %d W\n", power);
         MatterLikePacket rs = MatterLike::createReportAttributePacket(pkt, power);
         transport.send(srcMac, rs);
         break;
@@ -135,7 +134,7 @@ void MessageDispatcher::handleElectricalMeasurement(const MatterLikePacket &pkt,
     case ATTR_EM_RMS_VOLTAGE:
     {
         uint32_t voltage = dds661PowerMeter.voltage(DSS661_SLAVE_ADDRESS);
-        Serial.printf("Voltage: %.2f V\n", voltage);
+        Serial.printf("Voltage: %d V\n", voltage);
         MatterLikePacket rs = MatterLike::createReportAttributePacket(pkt, voltage);
         transport.send(srcMac, rs);
         break;
@@ -143,7 +142,7 @@ void MessageDispatcher::handleElectricalMeasurement(const MatterLikePacket &pkt,
     case ATTR_EM_RMS_CURRENT:
     {
         uint32_t current = dds661PowerMeter.electricCurrent(DSS661_SLAVE_ADDRESS);
-        Serial.printf("Current: %.2f A\n", current);
+        Serial.printf("Current: %d A\n", current);
         MatterLikePacket rs = MatterLike::createReportAttributePacket(pkt, current);
         transport.send(srcMac, rs);
         break;
@@ -151,7 +150,7 @@ void MessageDispatcher::handleElectricalMeasurement(const MatterLikePacket &pkt,
     case ATTR_EM_ENERGY:
     {
         u32_t energy = dds661PowerMeter.totalActivePower(DSS661_SLAVE_ADDRESS);
-        Serial.printf("Total active power/energy: %.2f\n", energy);
+        Serial.printf("Total active power/energy: %d\n", energy);
         MatterLikePacket rs = MatterLike::createReportAttributePacket(pkt, energy);
         transport.send(srcMac, rs);
         break;
@@ -159,7 +158,7 @@ void MessageDispatcher::handleElectricalMeasurement(const MatterLikePacket &pkt,
     case ATTR_EM_RMS_FREQUENCY:
     {
         u32_t frequency = dds661PowerMeter.frequency(DSS661_SLAVE_ADDRESS);
-        Serial.printf("Frequency: %.2f\n", frequency);
+        Serial.printf("Frequency: %d\n", frequency);
         MatterLikePacket rs = MatterLike::createReportAttributePacket(pkt, frequency);
         transport.send(srcMac, rs);
         break;

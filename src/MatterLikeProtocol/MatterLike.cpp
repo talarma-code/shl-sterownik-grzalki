@@ -10,13 +10,13 @@ uint32_t MatterLike::messageCounter = 1;
 MatterLikePacket MatterLike::createTurnOnPacket(uint16_t nodeId, uint8_t endpointId)
 {
     MatterLikePayload payload = createOnOffPayload(nodeId, endpointId, CMD_ON);
-    return createPacket(messageCounter++, payload, 0x01);
+    return createPacket(messageCounter++, payload, ML_FLAG_ACK_REQUEST);
 }
 
 MatterLikePacket MatterLike::createTurnOffPacket(uint16_t nodeId, uint8_t endpointId)
 {
     MatterLikePayload payload = createOnOffPayload(nodeId, endpointId, CMD_OFF);
-    return createPacket(messageCounter++, payload, 0x01);
+    return createPacket(messageCounter++, payload, ML_FLAG_ACK_REQUEST);
 }
 
 MatterLikePacket MatterLike::createReadOnOffPacket(uint16_t nodeId, uint8_t endpointId)
@@ -54,18 +54,17 @@ MatterLikePacket MatterLike::createReportAttributePacket(const MatterLikePacket 
                                        value);
 }
 
-MatterLikePacket MatterLike::createAckPacket(const MatterLikePacket &receivedPacket)
-{
-    MatterLikePayload payload;
-    payload.fabricId = receivedPacket.payload.fabricId;
-    payload.nodeId = receivedPacket.payload.nodeId;
-    payload.endpointId = receivedPacket.payload.endpointId;
-    payload.clusterId = receivedPacket.payload.clusterId;
-    payload.attributeId = receivedPacket.payload.attributeId;
-    payload.commandId = 0x05; // 0x05 = ACK command
-    payload.value = 0;        // no value needed
+MatterLikePacket MatterLike::createAckPacket(const MatterLikePacket& receivedPacket) {
+    MatterLikePacket packet;
+    packet.header.flags = ML_FLAG_ACK_RESPONSE;
+    packet.header.messageCounter = receivedPacket.header.messageCounter;
+    packet.header.sessionId = receivedPacket.header.sessionId;
+    memset(&packet.payload, 0, sizeof(packet.payload));
+    return packet;
+}
 
-    return createPacket(receivedPacket.header.messageCounter, payload, 0x00); // flags=0
+bool MatterLike::isAckPacket(const MatterLikePacket& receivedPacket) {
+    return receivedPacket.header.flags & ML_FLAG_ACK_REQUEST;
 }
 
 // -------------------------------
@@ -114,3 +113,4 @@ MatterLikePacket MatterLike::createPacket(uint32_t msgCounter, const MatterLikeP
     packet.payload = payload;
     return packet;
 }
+

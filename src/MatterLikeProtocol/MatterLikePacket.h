@@ -3,6 +3,17 @@
 #include <Arduino.h>
 
 
+// Flags for MatterLikeHeader (1 byte)
+#define ML_FLAG_ACK_REQUEST   0x01  // Bit 0: Packet requires acknowledgement (ACK request)
+#define ML_FLAG_ACK_RESPONSE  0x02  // Bit 1: Packet is a transport acknowledgement (ACK response)
+#define ML_FLAG_RETRY         0x04  // Bit 2: Retransmission / retry packet
+#define ML_FLAG_BROADCAST     0x08  // Bit 3: Broadcast packet
+#define ML_FLAG_ENCRYPTED     0x10  // Bit 4: Payload is encrypted
+#define ML_FLAG_RESERVED1     0x20  // Bit 5: Reserved for future use
+#define ML_FLAG_RESERVED2     0x40  // Bit 6: Reserved for future use
+#define ML_FLAG_RESERVED3     0x80  // Bit 7: Reserved for future use
+
+
 // Cluster IDs
 #define CLUSTER_ONOFF                  0x0006
 #define CLUSTER_ELECTRICAL_MEAS        0x0B04

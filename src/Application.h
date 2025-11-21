@@ -14,6 +14,5 @@ public:
     void loop();          // loop Arduino
 
 private:
-    HeaterDirect heater;
     MessageDispatcher messageDispatcher;
 };

@@ -19,6 +19,7 @@ public:
     static MatterLikePacket createReportAttributePacket(const MatterLikePacket& receivedPacket, int32_t value);
 
     static MatterLikePacket createAckPacket(const MatterLikePacket& receivedPacket);
+    static bool isAckPacket(const MatterLikePacket& receivedPacket);
 
 private:
     // -------------------------------
@@ -31,7 +32,6 @@ private:
     static MatterLikePayload createOnOffPayload(uint16_t nodeId, uint8_t endpointId, uint8_t commandId, int32_t value = 0);
     static MatterLikePayload createElectricalPayload(uint16_t nodeId, uint8_t endpointId, uint16_t attributeId, uint8_t commandId, int32_t value = 0);
     static MatterLikePacket createPacket(uint32_t messageCounter, const MatterLikePayload& payload, uint8_t flags = 0);
-
     // Optional: internal message counter
     static uint32_t messageCounter;
 };
