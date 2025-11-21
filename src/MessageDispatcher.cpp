@@ -5,10 +5,10 @@
 
 MessageDispatcher::MessageDispatcher() : heater1(RELAY_PIN), heater2(LED_PIN)
 {
-
 }
 
-void MessageDispatcher::setup() {
+void MessageDispatcher::setup()
+{
     Serial.println("MessageDispatcher::setup");
     dds661PowerMeter.setup();
     delay(20);
@@ -20,7 +20,8 @@ void MessageDispatcher::handlePacket(const MatterLikePacket &pkt, const uint8_t 
 {
     Serial.println("Received MatterLike packet!");
 
-    if (MatterLike::isAckPacket(pkt)) {
+    if (MatterLike::isAckPacket(pkt))
+    {
         Serial.println("Sending MatterLike ACK packet!");
         MatterLikePacket ackPacket = MatterLike::createAckPacket(pkt);
         transport.send(srcMac, ackPacket);
@@ -67,7 +68,7 @@ void MessageDispatcher::handleOnOff(const MatterLikePacket &pkt, const uint8_t *
     {
         Serial.println("CMD_READ_ATTRIBUTE received");
         bool currentState = getRelayStateForEndpoint(pkt.payload.endpointId);
-        Serial.printf("currentState: %d W\n", currentState); 
+        Serial.printf("currentState: %d W\n", currentState);
         MatterLikePacket rs = MatterLike::createReportAttributePacket(pkt, currentState);
         transport.send(srcMac, rs);
         break;
@@ -94,7 +95,7 @@ bool MessageDispatcher::getRelayStateForEndpoint(uint8_t ep)
     return false;
 }
 
-void MessageDispatcher::setRelayStateForEndpoint (uint8_t ep, bool state)
+void MessageDispatcher::setRelayStateForEndpoint(uint8_t ep, bool state)
 {
     switch (ep)
     {

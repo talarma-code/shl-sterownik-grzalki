@@ -1,6 +1,5 @@
 #include "Application.h"
 #include <Arduino.h>
-#include <WiFi.h>
 
 
 Application::Application()

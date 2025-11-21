@@ -19,7 +19,7 @@ bool EspNowTransport::begin() {
 
     WiFi.mode(WIFI_STA);
 
-    // Ustaw własny MAC (NOWOŚĆ: esp_wifi_set_mac wymaga specjalnego include!)
+    // set MAC address for this device (NEW: esp_wifi_set_mac requiered seperate include)
     if (esp_wifi_set_mac(WIFI_IF_STA, (uint8_t*)MAC_LOCAL_HEATER) != ESP_OK) {
         Serial.println("⚠ Could not set custom MAC!");
     }
@@ -35,10 +35,10 @@ bool EspNowTransport::begin() {
         return false;
     }
 
-    // Dodaj odbiornik (heater) jako PEER
+    // Add reciver (heater) as PEER
     esp_now_peer_info_t peerInfo = {};
     memcpy(peerInfo.peer_addr, MAC_CENTRALKA, 6);
-    peerInfo.channel = 0;  // ten sam co WiFi
+    peerInfo.channel = 0;  // the same channel as in WiFi
     peerInfo.encrypt = false;
 
     if (esp_now_add_peer(&peerInfo) == ESP_OK) {
