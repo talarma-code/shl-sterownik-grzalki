@@ -1,0 +1,3 @@
+[submodule "lib/matter-like"]
+	path = lib/matter-like
+	url = https://github.com/talarma-code/matter-like-protocol
