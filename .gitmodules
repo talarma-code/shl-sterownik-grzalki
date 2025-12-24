@@ -1,3 +1,6 @@
 [submodule "lib/matter-like"]
 	path = lib/matter-like
 	url = https://github.com/talarma-code/matter-like-protocol
+[submodule "lib/active-rt-framework"]
+	path = lib/active-rt-framework
+	url = https://github.com/talarma-code/active-rt-framework
