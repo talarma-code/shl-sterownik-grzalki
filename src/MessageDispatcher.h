@@ -10,11 +10,11 @@
 #define LED_PIN 2 
 #define RELAY_PIN 33
 
-class MessageDispatcher : public IMatterReceiver {
+class MessageDispatcher  {
 public:
     MessageDispatcher();
-    void handlePacket(const MatterLikePacket &pkt, const uint8_t *srcMac) override;
-    void setup();
+    void handleMessage(const MatterLikePacket &pkt, const uint8_t *srcMac);
+    void setup(IMatterReceiver *receiver);
 
 
 private:

@@ -7,16 +7,16 @@ MessageDispatcher::MessageDispatcher() : heater1(RELAY_PIN), heater2(LED_PIN)
 {
 }
 
-void MessageDispatcher::setup()
+void MessageDispatcher::setup(IMatterReceiver *receiver)
 {
     Serial.println("MessageDispatcher::setup");
     dds661PowerMeter.setup();
     delay(20);
-    transport.onPacketReceived(this);
+    transport.onPacketReceived(receiver);
     transport.begin();
 }
 
-void MessageDispatcher::handlePacket(const MatterLikePacket &pkt, const uint8_t *srcMac)
+void MessageDispatcher::handleMessage(const MatterLikePacket &pkt, const uint8_t *srcMac)
 {
     Serial.println("Received MatterLike packet!");
 
