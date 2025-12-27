@@ -2,6 +2,8 @@
 #include "MatterLike.h"
 
 #define DSS661_SLAVE_ADDRESS 1
+static const uint8_t MAC_LOCAL_HEATER[]  = {0x74, 0x61, 0x6C, 0x61, 0x72, 0x31}; // talar1 - heater
+static const uint8_t MAC_CENTRALKA[]   = {0x74, 0x61, 0x6C, 0x61, 0x72, 0x30}; // talar0 - centrala
 
 MessageDispatcher::MessageDispatcher() : heater1(RELAY_PIN), heater2(LED_PIN)
 {
@@ -13,7 +15,7 @@ void MessageDispatcher::setup(IMatterReceiver *receiver)
     dds661PowerMeter.setup();
     delay(20);
     transport.onPacketReceived(receiver);
-    transport.begin();
+    transport.begin(MAC_LOCAL_HEATER, MAC_CENTRALKA);
 }
 
 void MessageDispatcher::handleMessage(const MatterLikePacket &pkt, const uint8_t *srcMac)
