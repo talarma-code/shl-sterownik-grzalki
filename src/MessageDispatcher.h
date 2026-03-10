@@ -1,10 +1,10 @@
 #pragma once
 #include <Arduino.h>
-#include "MatterLikePacket.h"
+#include "ShlProtocolPacket.h"
 #include "HeaterDirect.h"
 #include "DDS661PowerMeter.h"
-#include "EspNowTransport.h"
-#include "IMatterReceiver.h"
+#include "ShlProtocolTransport.h"
+#include "IShlProtocolReceiver.h"
 
 // Output pins 
 #define LED_PIN 2 
@@ -13,18 +13,23 @@
 class MessageDispatcher  {
 public:
     MessageDispatcher();
-    void handleMessage(const MatterLikePacket &pkt, const uint8_t *srcMac);
-    void setup(IMatterReceiver *receiver);
+    void handleMessage(const ShlProtocolPacket &pkt, const uint8_t *srcMac);
+    void setup(IShlProtocolReceiver *receiver);
 
 
 private:
     HeaterDirect heater1;
     HeaterDirect heater2;
     DDS661PowerMeter dds661PowerMeter;
-    EspNowTransport transport;
+    ShlProtocolTransport transport;
+    uint8_t messageCounter{0};
 
-    void handleOnOff(const MatterLikePacket &pkt, const uint8_t *srcMac);
-    void handleElectricalMeasurement(const MatterLikePacket &pkt, const uint8_t *srcMac);
+    void handleSetRelays(const ShlProtocolPacket &pkt, const uint8_t *srcMac);
+    void sendReportAll(const uint8_t *dstMac, uint8_t messageCounterOverride);
+    void sendReportPower(const uint8_t *dstMac, uint8_t messageCounterOverride);
+    void sendReportVoltage(const uint8_t *dstMac, uint8_t messageCounterOverride);
+    uint16_t readTotalPower();
+    uint16_t readVoltage();
 
     bool getRelayStateForEndpoint(uint8_t ep);
     void setRelayStateForEndpoint(uint8_t ep, bool state);

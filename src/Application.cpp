@@ -1,6 +1,5 @@
 #include "Application.h"
 #include <Arduino.h>
-#include "MatterLikeDebugger.h"
 
 
 Application::Application() : messageDispatcher(), packetQueue(3)
@@ -14,15 +13,21 @@ void Application::setup() {
 }
 
 void Application::loop() {
-    MatterPacketWithMac rx;
+    ShlProtocolWithMacAddress rx;
     packetQueue.receive(rx, portMAX_DELAY);
     Serial.println("Application::loop - packet received from queue:");
-    MatterLikeDebugger::print(rx);
+    Serial.printf("CMD=%u, msgCounter=%u, r1=%u, r2=%u, totalPower=%u, voltage=%u\n",
+                  rx.packet.commandId,
+                  rx.packet.messageCounter,
+                  rx.packet.relay1,
+                  rx.packet.relay2,
+                  rx.packet.totalPower,
+                  rx.packet.voltage);
     messageDispatcher.handleMessage(rx.packet, rx.mac.bytes);
 }
 
 // this is called from ISR context when packet is received
-void Application::handlePacket(const MatterPacketWithMac &pkt) {
+void Application::handlePacket(const ShlProtocolWithMacAddress &pkt) {
     packetQueue.sendFromISR(pkt);
 }
 

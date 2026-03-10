@@ -2,17 +2,18 @@
 #include "HeaterDirect.h"
 #include "MessageDispatcher.h"
 #include "ActiveQueue.h"
-#include "MatterLikePacket.h"
+#include "ShlProtocolPacket.h"
+#include "IShlProtocolReceiver.h"
 
-class Application : public IMatterReceiver  {
+class Application : public IShlProtocolReceiver  {
 public:
     Application();        // konstruktor
     void setup();         // setup Arduino
     void loop();          // loop Arduino
-    void handlePacket(const MatterPacketWithMac &pkt) override;
+    void handlePacket(const ShlProtocolWithMacAddress &pkt) override;
 
 private:
     MessageDispatcher messageDispatcher;
-    ActiveQueue<MatterPacketWithMac> packetQueue;
+    ActiveQueue<ShlProtocolWithMacAddress> packetQueue;
     
 };

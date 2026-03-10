@@ -1,5 +1,5 @@
 #include "MessageDispatcher.h"
-#include "MatterLike.h"
+#include "ShlProtocol.h"
 
 #define DSS661_SLAVE_ADDRESS 1
 static const uint8_t MAC_LOCAL_HEATER[]  = {0x74, 0x61, 0x6C, 0x61, 0x72, 0x31}; // talar1 - heater
@@ -9,7 +9,7 @@ MessageDispatcher::MessageDispatcher() : heater1(RELAY_PIN), heater2(LED_PIN)
 {
 }
 
-void MessageDispatcher::setup(IMatterReceiver *receiver)
+void MessageDispatcher::setup(IShlProtocolReceiver *receiver)
 {
     Serial.println("MessageDispatcher::setup");
     dds661PowerMeter.setup();
@@ -18,70 +18,41 @@ void MessageDispatcher::setup(IMatterReceiver *receiver)
     transport.begin(MAC_LOCAL_HEATER, MAC_CENTRALKA);
 }
 
-void MessageDispatcher::handleMessage(const MatterLikePacket &pkt, const uint8_t *srcMac)
+void MessageDispatcher::handleMessage(const ShlProtocolPacket &pkt, const uint8_t *srcMac)
 {
-    Serial.println("Received MatterLike packet!");
+    Serial.println("Received ShlProtocol packet!");
 
-    if (MatterLike::isAckPacket(pkt))
+    switch (pkt.commandId)
     {
-        Serial.println("Sending MatterLike ACK packet!");
-        MatterLikePacket ackPacket = MatterLike::createAckPacket(pkt);
-        transport.send(srcMac, ackPacket);
-    }
-
-    switch (pkt.payload.clusterId)
-    {
-    case CLUSTER_ONOFF:
-        handleOnOff(pkt, srcMac);
+    case SHL_PROTOCOL_CMD_SET_RELAYS:
+        handleSetRelays(pkt, srcMac);
         break;
-
-    case CLUSTER_ELECTRICAL_MEAS:
-        handleElectricalMeasurement(pkt, srcMac);
+    case SHL_PROTOCOL_CMD_REPORT_ALL:
+        Serial.println("Report-all request received");
+        sendReportAll(srcMac, pkt.messageCounter);
         break;
-
+    case SHL_PROTOCOL_CMD_REPORT_POWER:
+        Serial.println("Report-power request received");
+        sendReportPower(srcMac, pkt.messageCounter); //TODO: shl-protocol, check it
+        break;
+    case SHL_PROTOCOL_CMD_REPORT_VOLTAGE:
+        Serial.println("Report-voltage request received");
+        sendReportVoltage(srcMac, pkt.messageCounter); //TODO: shl-protocol, check it
+        break;
     default:
-        Serial.printf("Unknown cluster ID: 0x%04X\n", pkt.payload.clusterId);
+        Serial.printf("Unknown ShlProtocol commandId: 0x%02X\n", pkt.commandId);
         break;
     }
 }
 
-// ---------------- OnOff Handling ----------------
+// ---------------- ShlProtocol Handling ----------------
 
-void MessageDispatcher::handleOnOff(const MatterLikePacket &pkt, const uint8_t *srcMac)
+void MessageDispatcher::handleSetRelays(const ShlProtocolPacket &pkt, const uint8_t *srcMac)
 {
-    switch (pkt.payload.commandId)
-    {
-    case CMD_ON:
-        Serial.println("CMD_ON received");
-        setRelayStateForEndpoint(pkt.payload.endpointId, true);
-        break;
+    setRelayStateForEndpoint(1, pkt.relay1 != 0);
+    setRelayStateForEndpoint(2, pkt.relay2 != 0);
 
-    case CMD_OFF:
-        Serial.println("CMD_OFF received");
-        setRelayStateForEndpoint(pkt.payload.endpointId, false);
-        break;
-
-    case CMD_TOGGLE:
-        Serial.println("CMD_TOGGLE received");
-        toggleRelay(pkt.payload.endpointId);
-        break;
-
-    case CMD_READ_ATTRIBUTE:
-    {
-        Serial.println("CMD_READ_ATTRIBUTE received");
-        bool currentState = getRelayStateForEndpoint(pkt.payload.endpointId);
-        Serial.printf("currentState: %d W\n", currentState);
-        MatterLikePacket rs = MatterLike::createReportAttributePacket(pkt, currentState);
-        transport.send(srcMac, rs);
-        break;
-    }
-
-    default:
-        Serial.printf("Unknown OnOff Command: 0x%02X\n", pkt.payload.commandId);
-        return;
-    }
-
-    // NOTE: Matter would now send ReportAttribute (state change notification)
+    sendReportAll(srcMac, pkt.messageCounter);
 }
 
 // Relay helpers:
@@ -105,7 +76,7 @@ void MessageDispatcher::setRelayStateForEndpoint(uint8_t ep, bool state)
         state ? heater1.turnOn() : heater1.turnOff();
         break;
     case 2:
-        state ? heater2.turnOn() : heater1.turnOff();
+        state ? heater2.turnOn() : heater2.turnOff();
         break;
     default:
         Serial.printf("Invalid endpoint for On/Off: %d\n", ep);
@@ -119,56 +90,56 @@ void MessageDispatcher::toggleRelay(uint8_t ep)
     setRelayStateForEndpoint(ep, !current);
 }
 
-// ---------------- Electrical Measurement Handling ----------------
-
-void MessageDispatcher::handleElectricalMeasurement(const MatterLikePacket &pkt, const uint8_t *srcMac)
+void MessageDispatcher::sendReportAll(const uint8_t *dstMac, uint8_t messageCounterOverride)
 {
-    switch (pkt.payload.attributeId)
-    {
-    case ATTR_EM_ACTIVE_POWER:
-    {
-        uint32_t power = dds661PowerMeter.activePower(DSS661_SLAVE_ADDRESS);
-        Serial.printf("Active Power: %d W\n", power);
-        MatterLikePacket rs = MatterLike::createReportAttributePacket(pkt, power);
-        transport.send(srcMac, rs);
-        break;
-    }
+    const uint16_t totalPower = readTotalPower();
+    const uint16_t voltage = readVoltage();
 
-    case ATTR_EM_RMS_VOLTAGE:
-    {
-        uint32_t voltage = dds661PowerMeter.voltage(DSS661_SLAVE_ADDRESS);
-        Serial.printf("Voltage: %d V\n", voltage);
-        MatterLikePacket rs = MatterLike::createReportAttributePacket(pkt, voltage);
-        transport.send(srcMac, rs);
-        break;
-    }
-    case ATTR_EM_RMS_CURRENT:
-    {
-        uint32_t current = dds661PowerMeter.electricCurrent(DSS661_SLAVE_ADDRESS);
-        Serial.printf("Current: %d A\n", current);
-        MatterLikePacket rs = MatterLike::createReportAttributePacket(pkt, current);
-        transport.send(srcMac, rs);
-        break;
-    }
-    case ATTR_EM_ENERGY:
-    {
-        u32_t energy = dds661PowerMeter.totalActivePower(DSS661_SLAVE_ADDRESS);
-        Serial.printf("Total active power/energy: %d\n", energy);
-        MatterLikePacket rs = MatterLike::createReportAttributePacket(pkt, energy);
-        transport.send(srcMac, rs);
-        break;
-    }
-    case ATTR_EM_RMS_FREQUENCY:
-    {
-        u32_t frequency = dds661PowerMeter.frequency(DSS661_SLAVE_ADDRESS);
-        Serial.printf("Frequency: %d\n", frequency);
-        MatterLikePacket rs = MatterLike::createReportAttributePacket(pkt, frequency);
-        transport.send(srcMac, rs);
-        break;
-    }
-    default:
-        Serial.printf("Unknown EM attribute: 0x%04X",
-                      pkt.payload.attributeId);
-        break;
-    }
+    ShlProtocolPacket rs = ShlProtocol::createReportAll(
+        messageCounterOverride,
+        totalPower,
+        voltage,
+        getRelayStateForEndpoint(1) ? 1 : 0,
+        getRelayStateForEndpoint(2) ? 1 : 0);
+
+    transport.send(dstMac, rs);
+}
+
+void MessageDispatcher::sendReportPower(const uint8_t *dstMac, uint8_t messageCounterOverride)
+{
+    const uint16_t totalPower = readTotalPower();
+
+    ShlProtocolPacket rs = ShlProtocol::createReportPower(
+        messageCounterOverride,
+        totalPower,
+        getRelayStateForEndpoint(1) ? 1 : 0,
+        getRelayStateForEndpoint(2) ? 1 : 0);
+
+    transport.send(dstMac, rs);
+}
+
+void MessageDispatcher::sendReportVoltage(const uint8_t *dstMac, uint8_t messageCounterOverride)
+{
+    const uint16_t voltage = readVoltage();
+
+    ShlProtocolPacket rs = ShlProtocol::createReportVoltage(
+        messageCounterOverride,
+        voltage,
+        getRelayStateForEndpoint(1) ? 1 : 0,
+        getRelayStateForEndpoint(2) ? 1 : 0);
+
+    transport.send(dstMac, rs);
+}
+
+uint16_t MessageDispatcher::readTotalPower()
+{
+    const uint32_t power = dds661PowerMeter.totalActivePower(DSS661_SLAVE_ADDRESS);
+    return static_cast<uint16_t>(power);
+}
+
+uint16_t MessageDispatcher::readVoltage()
+{
+    const uint32_t voltage = dds661PowerMeter.voltage(DSS661_SLAVE_ADDRESS);
+    //return voltage as uint16_t with one decimal place (e.g. 230.5V -> 2305)
+    return static_cast<uint16_t>(voltage * 10);
 }
