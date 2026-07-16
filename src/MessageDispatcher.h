@@ -5,6 +5,7 @@
 #include "DDS661PowerMeter.h"
 #include "ShlProtocolTransport.h"
 #include "IShlProtocolReceiver.h"
+#include "PulsePowerMeter.h"
 
 // Output pins 
 #define LED_PIN 2 
@@ -15,12 +16,16 @@ public:
     MessageDispatcher();
     void handleMessage(const ShlProtocolPacket &pkt, const uint8_t *srcMac);
     void setup(IShlProtocolReceiver *receiver);
+    void setHeater1Override(bool enable);
+    void setHeater2Override(bool enable);
 
 
 private:
     HeaterDirect heater1;
     HeaterDirect heater2;
-    DDS661PowerMeter dds661PowerMeter;
+    bool heater1OverrideEnabled = false;
+    bool heater2OverrideEnabled = false;
+    PulsePowerMeter pulsePowerMeter;
     ShlProtocolTransport transport;
     uint8_t messageCounter{0};
 
@@ -31,7 +36,9 @@ private:
     uint16_t readTotalPower();
     uint16_t readVoltage();
 
-    bool getRelayStateForEndpoint(uint8_t ep);
+    uint8_t getRelayStateForEndpoint(uint8_t ep);
     void setRelayStateForEndpoint(uint8_t ep, bool state);
-    void toggleRelay(uint8_t ep);
+
+    void turnOffHeater1();
+    void turnOffHeater2();
 };
