@@ -8,8 +8,8 @@
 #include "PulsePowerMeter.h"
 
 // Output pins 
-#define LED_PIN 2 
 #define RELAY_PIN 33
+#define RELAY2_PIN 2
 
 class MessageDispatcher  {
 public:
@@ -35,6 +35,9 @@ private:
     void sendReportVoltage(const uint8_t *dstMac, uint8_t messageCounterOverride);
     uint16_t readTotalPower();
     uint16_t readVoltage();
+
+    uint8_t getHeater1State();
+    uint8_t getHeater2State();
 
     uint8_t getRelayStateForEndpoint(uint8_t ep);
     void setRelayStateForEndpoint(uint8_t ep, bool state);

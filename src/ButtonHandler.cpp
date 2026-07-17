@@ -14,12 +14,12 @@ const char* ButtonHandler::stateDebugString(ButtonHandler::State state) {
 
 ButtonHandler::ButtonHandler(uint8_t pin,
                              ActiveQueueRef<SystemMessage> queue,    
-                             uint32_t debounceMs,
+                             uint32_t minimumPressTime,
                              uint32_t shortThresholdMs,
                              bool activeLow)
     : _pin(pin),
       _queue(queue),
-      _debounceMs(debounceMs),
+      _minimumPressTime(minimumPressTime),
       _shortThresholdMs(shortThresholdMs),
       _activeLow(activeLow) {}
 
@@ -71,9 +71,16 @@ void ButtonHandler::update() {
                 _lastPressDurationMs = durationMs;
                 _lastPressCategory = classifyDuration(durationMs);
 
-                Event event{};
-                event.category = _lastPressCategory;
-                enqueueEvent(event);
+                if (_lastPressCategory != PressCategory::Ignored) {
+                    Event event{};
+                    event.category = _lastPressCategory;
+                    enqueueEvent(event);
+                }
+                else
+                {
+                    LOG_DEBUG("Pressing (ignored, duration=%u ms)", durationMs);
+                }
+
 
                 _stateChangeTimeMs = now;
                 LOG_DEBUG("Idle (event generated, duration=%u ms, category=%d)", 
@@ -90,7 +97,7 @@ void ButtonHandler::enqueueEvent(const Event &event) {
     LOG_DEBUG("ButtonHandler::enqueueEvent - category=%d", static_cast<int>(event.category));
 
     SystemMessage msg;
-    msg.type = SystemMessageType::TimerEvent;
+    msg.type = SystemMessageType::ButtonEvent;
     _queue.send(msg);
 }
 
@@ -100,6 +107,9 @@ bool ButtonHandler::readRawState() const {
 }
 
 ButtonHandler::PressCategory ButtonHandler::classifyDuration(uint32_t durationMs) const {
+    if (durationMs < _minimumPressTime) {
+        return PressCategory::Ignored;
+    }
     if (durationMs < _shortThresholdMs) {
         return PressCategory::Short;
     }

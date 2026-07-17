@@ -10,7 +10,8 @@ class ButtonHandler {
 public:
     enum class PressCategory : uint8_t {
         Short = 0,
-        Long = 1
+        Long = 1,
+        Ignored = 2
     };
 
     struct Event {
@@ -21,7 +22,7 @@ public:
 
     ButtonHandler(uint8_t pin,
                   ActiveQueueRef<SystemMessage> queue,
-                  uint32_t debounceMs = 30,
+                  uint32_t minimumPressTime = 300,
                   uint32_t shortThresholdMs = 1500,
                   bool activeLow = true);
 
@@ -41,7 +42,7 @@ private:
     
 
     uint8_t _pin;
-    uint32_t _debounceMs;
+    uint32_t _minimumPressTime;
     uint32_t _shortThresholdMs;
     bool _activeLow;
     ActiveQueueRef<SystemMessage> _queue;

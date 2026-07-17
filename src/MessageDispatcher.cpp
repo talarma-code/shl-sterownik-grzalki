@@ -6,12 +6,15 @@
 static const uint8_t MAC_LOCAL_HEATER[]  = {0x74, 0x61, 0x6C, 0x61, 0x72, 0x31}; // talar1 - heater
 static const uint8_t MAC_CENTRALKA[]   = {0x74, 0x61, 0x6C, 0x61, 0x72, 0x30}; // talar0 - centrala
 
+static const uint8_t HEATER_DISABLE = 0;
+static const uint8_t HEATER_ENABLE = 1;
 static const uint8_t HEATER_ENABLE_MANUAL = 2;
 
 MessageDispatcher::MessageDispatcher() : heater1(RELAY_PIN), 
-heater2(LED_PIN), 
+heater2(RELAY2_PIN), 
 pulsePowerMeter()
 {
+     
 }
 
 void MessageDispatcher::setup(IShlProtocolReceiver *receiver)
@@ -66,12 +69,42 @@ uint8_t MessageDispatcher::getRelayStateForEndpoint(uint8_t ep)
     switch (ep)
     {
     case 1:
-        return heater1OverrideEnabled ? HEATER_ENABLE_MANUAL :heater1.isOn();
+        return getHeater1State();
     case 2:
-        return heater2OverrideEnabled ? HEATER_ENABLE_MANUAL : heater2.isOn();
+        return getHeater2State();
     }
     return false;
 }
+
+uint8_t MessageDispatcher::getHeater1State()
+{
+    if (heater1OverrideEnabled) {
+        return HEATER_ENABLE_MANUAL;
+    }
+    else if (heater1.isOn()) {
+        return HEATER_ENABLE;
+    }
+    else {
+        return HEATER_DISABLE;
+    }
+}
+
+uint8_t MessageDispatcher::getHeater2State()
+{
+    if (heater2OverrideEnabled) {
+        return HEATER_ENABLE_MANUAL;
+    }
+    else if (heater2.isOn()) {
+        return HEATER_ENABLE;
+    }
+    else {
+        return HEATER_DISABLE;
+    }
+}
+
+
+
+
 
 void MessageDispatcher::setRelayStateForEndpoint(uint8_t ep, bool state)
 {
@@ -150,9 +183,9 @@ void MessageDispatcher::sendReportAll(const uint8_t *dstMac, uint8_t messageCoun
         getRelayStateForEndpoint(2));
 
     transport.send(dstMac, rs);
-    LOG_INFO("Sent report-all to MAC %02X:%02X:%02X:%02X:%02X:%02X, totalPower=%u, voltage=%u",
+    LOG_INFO("Sent report-all to MAC %02X:%02X:%02X:%02X:%02X:%02X, totalPower=%u, voltage=%u, relay1=%u, relay2=%u", 
              dstMac[0], dstMac[1], dstMac[2], dstMac[3], dstMac[4], dstMac[5],
-             totalPower, voltage);
+             totalPower, voltage, getRelayStateForEndpoint(1), getRelayStateForEndpoint(2));
 }
 
 void MessageDispatcher::sendReportPower(const uint8_t *dstMac, uint8_t messageCounterOverride)

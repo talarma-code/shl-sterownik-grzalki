@@ -2,6 +2,8 @@
 #include "Log.h"
 #include <Arduino.h>
 
+
+
 Application::Application() : messageDispatcher(), packetQueue(3),
 timer(APPLICATION_SYSTEM_TIMER_ID, 5000, SystemTimerT<SystemMessage, TimerToSystemMessage>::Mode::OneShot, ActiveQueueRef<SystemMessage>(packetQueue.nativeHandle()), TimerToSystemMessage()),
 buttonHandler(4, ActiveQueueRef<SystemMessage>(packetQueue.nativeHandle())) // pin przycisku
@@ -15,6 +17,12 @@ void Application::setup() {
     delay(500);
     buttonHandler.begin();
     messageDispatcher.setup(this);
+
+    pinMode(19, OUTPUT);
+    pinMode(21, OUTPUT);
+    digitalWrite(19, LOW);
+    digitalWrite(21, LOW);
+
     LOG_INFO("Application setup complete - v1.01");
 }
 
@@ -29,14 +37,16 @@ void Application::loop() {
     if (packetQueue.receive(msg, 50)) {
 
         if (state == STATE_AUTOMATION) {
-            if (msg.type == SystemMessageType::TimerEvent) {
+            if (msg.type == SystemMessageType::ButtonEvent) {
                 switch(buttonHandler.lastPressCategory()) {
                     case ButtonHandler::PressCategory::Short:
                         LOG_INFO("Enable heater for 2H");
                         state = STATE_MANULA_ENABLED;
                         messageDispatcher.setHeater1Override(true);
                         messageDispatcher.setHeater2Override(true);
-                        timer.start(10000); // Restart the timer for 5 seconds
+                        digitalWrite(19, HIGH);
+                        //TODO: check it for long time, do not work correclty
+                        timer.start(12UL * 60UL * 60UL * 1000UL); // this is potential error for value 3 timer was enable for about 38 minutes
                         break;
 
                     case ButtonHandler::PressCategory::Long:
@@ -44,17 +54,32 @@ void Application::loop() {
                         LOG_INFO("Enable heater - required manual disable");
                         messageDispatcher.setHeater1Override(true);
                         messageDispatcher.setHeater2Override(true);
+                        digitalWrite(19, HIGH);
+                        digitalWrite(21, HIGH);
                         break;
                 }
             }
             
         }
         else if (state == STATE_MANULA_ENABLED) {
-            if (msg.type == SystemMessageType::TimerEvent) {
+            if (msg.type == SystemMessageType::ButtonEvent) {
                 LOG_INFO("Manual override - disabling heaters");
                 messageDispatcher.setHeater1Override(false);
                 messageDispatcher.setHeater2Override(false);
+                digitalWrite(19, LOW);
+                digitalWrite(21, LOW);
                 state = STATE_AUTOMATION;
+                timer.stop();
+            }
+
+            if (msg.type == SystemMessageType::TimerEvent) {
+                LOG_INFO("Time end - disabling heaters");
+                messageDispatcher.setHeater1Override(false);
+                messageDispatcher.setHeater2Override(false);
+                digitalWrite(19, LOW);
+                digitalWrite(21, LOW);
+                state = STATE_AUTOMATION;
+                timer.stop();
             }
         }
 
