@@ -27,7 +27,7 @@ public:
 private:
     MessageDispatcher messageDispatcher;
     ActiveQueue<SystemMessage> packetQueue;
-    SystemTimerT<SystemMessage, TimerToSystemMessage> timer;
+    //SystemTimerT<SystemMessage, TimerToSystemMessage> timer;
     ButtonHandler buttonHandler;
 
     static const uint32_t APPLICATION_SYSTEM_TIMER_ID = 1;
